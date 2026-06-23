@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#121212">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Claudio — 个人 AI 电台">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/src/client/styles/variables.css">
+  <style>
+    /* ============================================================
+       CSS 变量 + 暗色主题基础
+       ============================================================ */
+    :root {
+      --color-bg-primary: #121212;
+      --color-bg-secondary: #1E1E1E;
+      --color-bg-elevated: #2C2C2C;
+      --bg-tertiary: #3A3A3A;
+      --border-default: #333333;
+      --border-subtle: #2A2A2A;
+      --color-text-primary: #FFFFFF;
+      --color-text-secondary: #B3B3B3;
+      --color-text-disabled: #666666;
+      --text-muted: #888888;
+      --color-accent: #FFB300;
+      --color-accent-hover: #FFC107;
+      --color-accent-active: #FF8F00;
+      --color-success: #4CAF50;
+      --color-warning: #FF9800;
+      --color-error: #F44336;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-size-sm: 12px;
+      --font-size-base: 14px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --transition-fast: 150ms ease;
+      --transition-normal: 300ms ease;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: var(--font-family);
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ============================================================
+       App 容器 — Mobile First, max-width: 480px 居中
+       ============================================================ */
+    #app {
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      background: var(--color-bg-primary);
+    }
+
+    /* ============================================================
+       头部导航
+       ============================================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-md) var(--space-sm);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header__title {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+      color: var(--color-accent);
+      letter-spacing: 0.02em;
+    }
+
+    .header__status {
+      display: flex;
+      align-items: center;
+    }
+
+    /* AI 状态指示器 */
+    .ai-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .ai-indicator__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-success);
+    }
+
+    .ai-indicator__dot.thinking {
+      background: var(--color-accent);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .ai-indicator__dot.offline {
+      background: var(--color-error);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ============================================================
+       视图切换
+       ============================================================ */
+    .view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: var(--space-md);
+      gap: var(--space-md);
+    }
+
+    .view.active {
+      display: flex;
+    }
+
+    /* 自定义滚动条 */
+    .view::-webkit-scrollbar { width: 4px; }
+    .view::-webkit-scrollbar-track { background: transparent; }
+    .view::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+
+    /* ============================================================
+       播放器视图
+       ============================================================ */
+    .player-cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+      padding: var(--space-lg) 0;
+    }
+
+    .cover-wrapper {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .cover-wrapper.spinning .cover-image {
+      animation: spin 20s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cover-placeholder {
+      width: 100%;
+      height: 100%;
+    }
+
+    .track-info {
+      text-align: center;
+    }
+
+    .track-name {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-xs);
+    }
+
+    .track-artist {
+      font-size: var(--font-size-base);
+      color: var(--color-text-secondary);
+    }
+
+    /* 进度条 */
+    .player-progress {
+      padding: var(--space-sm) 0;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--border-default);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s linear;
+    }
+
+    .progress-time {
+      display: flex;
+      justify-content: space-between;
+      margin-top: var(--space-xs);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-disabled);
+    }
+
+    /* 控制栏 */
+    .player-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xl);
+      padding: var(--space-sm) 0;
+    }
+
+    .control-btn {
+      background: none;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      padding: var(--space-sm);
+      border-radius: 50%;
+      transition: color var(--transition-fast), background var(--transition-fast);
+    }
+
+    .control-btn:hover {
+      color: var(--color-text-primary);
+      background: var(--color-bg-elevated);
+    }
+
+    .control-btn--play {
+      width: 56px;
+      height: 56px;
+      background: var(--color-accent);
+      color: #121212;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn--play:hover {
+      background: var(--color-accent-hover);
+      color: #121212;
+    }
+
+    /* AI 信息流 */
+    .player-stream {
+      flex: 1;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+      text-align: center;
+    }
+
+    .stream-empty p {
+      max-width: 240px;
+      line-height: 1.8;
+    }
+
+    /* 快捷输入框 */
+    .player-input {
+      display: flex;
+      gap: var(--space-sm);
+      padding: var(--space-sm) 0;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ============================================================
+       卡片组件
+       ============================================================ */
+    .card {
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .card__title {
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-md);
+    }
+
+    /* 雷达图 */
+    .radar-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 160px;
+    }
+
+    .radar-container canvas {
+      max-width: 100%;
+    }
+
+    .chart-empty, .tag-cloud .muted-text, .timeline .muted-text {
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+      padding: var(--space-lg) 0;
+      text-align: center;
+    }
+
+    .taste-editor {
+      width: 100%;
+      margin-bottom: var(--space-md);
+    }
+
+    .save-btn {
+      align-self: flex-start;
+    }
+
+    /* ============================================================
+       设置视图
+       ============================================================ */
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      font-size: var(--font-size-base);
+      color: var(--color-text-secondary);
+    }
+
+    .setting-select {
+      width: 140px;
+    }
+
+    /* 服务列表 */
+    .service-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .service-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .service-item:last-child {
+      border-bottom: none;
+    }
+
+    .service-name {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-base);
+    }
+
+    /* 状态灯 */
+    .badge {
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+    }
+
+    .badge--online {
+      background: rgba(76, 175, 80, 0.15);
+      color: var(--color-success);
+    }
+
+    .badge--offline {
+      background: rgba(102, 102, 102, 0.15);
+      color: var(--color-text-disabled);
+    }
+
+    /* 设备列表 */
+    .device-list {
+      margin-bottom: var(--space-sm);
+    }
+
+    .device-list .muted-text {
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    /* 缓存信息 */
+    .cache-info {
+      margin-bottom: var(--space-sm);
+    }
+
+    .cache-info p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .cache-size {
+      color: var(--text-muted) !important;
+    }
+
+    .scan-btn {
+      width: 100%;
+    }
+
+    /* ============================================================
+       按钮系统
+       ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-family);
+      font-size: var(--font-size-base);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn--primary {
+      background: var(--color-accent);
+      color: #121212;
+      font-weight: 600;
+    }
+
+    .btn--primary:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .btn--primary:active {
+      background: var(--color-accent-active);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--border-default);
+    }
+
+    .btn--ghost:hover {
+      background: var(--color-bg-elevated);
+      color: var(--color-text-primary);
+    }
+
+    .btn--send {
+      padding: var(--space-sm);
+      min-width: 40px;
+      height: 40px;
+    }
+
+    /* ============================================================
+       表单元素
+       ============================================================ */
+    .input, textarea, select {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--color-text-primary);
+      font-family: var(--font-family);
+      font-size: var(--font-size-base);
+      padding: var(--space-sm) var(--space-md);
+      outline: none;
+      transition: border-color var(--transition-fast);
+    }
+
+    .input:focus, textarea:focus, select:focus {
+      border-color: var(--color-accent);
+    }
+
+    .input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .player-input .input {
+      flex: 1;
+    }
+
+    /* ============================================================
+       底部导航栏
+       ============================================================ */
+    .navbar {
+      display: flex;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--color-bg-secondary);
+    }
+
+    .navbar__item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: var(--space-sm) var(--space-xs);
+      background: none;
+      border: none;
+      color: var(--color-text-disabled);
+      font-family: var(--font-family);
+      font-size: 11px;
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+
+    .navbar__item:hover {
+      color: var(--color-text-secondary);
+    }
+
+    .navbar__item.active {
+      color: var(--color-accent);
+    }
+
+    .navbar__item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* ============================================================
+       工具类
+       ============================================================ */
+    .muted-text {
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+    }
+  </style>
+  <title>Claudio</title>
+</head>
+<body>
+  <!-- ============================================================
+       App 容器 — Mobile First, max-width 480px 居中 (Spec 5.1)
+       ============================================================ -->
+  <div id="app">
+
+    <!-- ============================================================
+         顶部导航栏
+         ============================================================ -->
+    <header class="header">
+      <h1 class="header__title">Claudio</h1>
+      <div class="header__status">
+        <!-- AI 状态指示器 -->
+        <div class="ai-indicator" id="aiIndicator">
+          <span class="ai-indicator__dot idle" id="aiDot"></span>
+          <span id="aiStatus">在线</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         视图 1: Player — 播放器视图 (Spec 5.2)
+         ============================================================ -->
+    <main class="view active" id="viewPlayer">
+      <!-- 动态封面区域 -->
+      <section class="player-cover" id="playerCover">
+        <div class="cover-wrapper">
+          <div class="cover-image" id="coverImage">
+            <svg viewBox="0 0 120 120" class="cover-placeholder">
+              <circle cx="60" cy="60" r="50" fill="var(--bg-tertiary)" stroke="var(--border-default)" stroke-width="1"/>
+              <text x="60" y="65" text-anchor="middle" fill="var(--text-muted)" font-size="14">Claudio</text>
+            </svg>
+          </div>
+          <!-- 封面旋转动画会被 JS 控制 -->
+        </div>
+        <!-- 歌曲信息 -->
+        <div class="track-info" id="trackInfo">
+          <p class="track-name">等待播放</p>
+          <p class="track-artist">—</p>
+        </div>
+      </section>
+
+      <!-- 进度条 -->
+      <section class="player-progress">
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-time">
+          <span id="timeCurrent">00:00</span>
+          <span id="timeDuration">00:00</span>
+        </div>
+      </section>
+
+      <!-- 控制栏 -->
+      <section class="player-controls">
+        <button class="btn btn--ghost control-btn" id="btnPrev" title="上一首">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button class="btn btn--primary control-btn control-btn--play" id="btnPlay" title="播放">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="btn btn--ghost control-btn" id="btnNext" title="下一首">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+      </section>
+
+      <!-- AI 信息流 -->
+      <section class="player-stream" id="aiStream">
+        <div class="stream-empty">
+          <p>跟我说句话，或者让我为你选首歌。</p>
+        </div>
+      </section>
+
+      <!-- 快捷输入框 -->
+      <div class="player-input">
+        <input
+          type="text"
+          class="input"
+          id="chatInput"
+          placeholder="跟 Claudio 说点什么…"
+          autocomplete="off"
+        />
+        <button class="btn btn--primary btn--send" id="btnSend">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- ============================================================
+         视图 2: Profile — 个人品味视图 (Spec 5.2)
+         ============================================================ -->
+    <main class="view" id="viewProfile">
+      <!-- 品味雷达图占位 -->
+      <section class="card">
+        <h2 class="card__title">品味画像</h2>
+        <div class="radar-container" id="radarChart">
+          <!-- Canvas 雷达图由 JS 渲染 -->
+          <canvas id="radarCanvas" width="300" height="300"></canvas>
+          <p class="chart-empty" id="radarEmpty">尚无足够数据生成品味画像</p>
+        </div>
+      </section>
+
+      <!-- 品味标签 -->
+      <section class="card">
+        <h2 class="card__title">音乐标签</h2>
+        <div class="tag-cloud" id="tagCloud">
+          <p class="muted-text">多听几首歌后，这里会出现你的音乐口味。</p>
+        </div>
+      </section>
+
+      <!-- 记忆时间线 -->
+      <section class="card">
+        <h2 class="card__title">播放记忆</h2>
+        <div class="timeline" id="playTimeline">
+          <p class="muted-text">还没有播放记录。</p>
+        </div>
+      </section>
+
+      <!-- 语料编辑区 -->
+      <section class="card">
+        <h2 class="card__title">语料 · 告诉 Claudio 你的偏好</h2>
+        <textarea
+          class="input taste-editor"
+          id="tasteEditor"
+          rows="4"
+          placeholder="比如：我喜欢爵士和民谣，不太听电子音乐…"
+        ></textarea>
+        <button class="btn btn--primary save-btn" id="btnSaveTaste">保存</button>
+      </section>
+    </main>
+
+    <!-- ============================================================
+         视图 3: Settings — 设置视图 (Spec 5.2)
+         ============================================================ -->
+    <main class="view" id="viewSettings">
+      <!-- AI 人格调节 -->
+      <section class="card">
+        <h2 class="card__title">AI 人格</h2>
+        <div class="settings-group">
+          <label class="setting-item">
+            <span>说话频率</span>
+            <select class="input setting-select" id="settingFrequency">
+              <option value="less">少说话，多播歌</option>
+              <option value="normal" selected>正常频率</option>
+              <option value="more">活跃聊天</option>
+            </select>
+          </label>
+          <label class="setting-item">
+            <span>DJ 风格</span>
+            <select class="input setting-select" id="settingStyle">
+              <option value="warm" selected>温暖陪伴</option>
+              <option value="casual">轻松随意</option>
+              <option value="pro">专业乐评</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <!-- 服务绑定状态灯 -->
+      <section class="card">
+        <h2 class="card__title">服务状态</h2>
+        <div class="service-list" id="serviceStatus">
+          <div class="service-item">
+            <span class="service-name">DeepSeek AI</span>
+            <span class="badge badge--online" id="statusDeepSeek">在线</span>
+          </div>
+          <div class="service-item">
+            <span class="service-name">网易云音乐</span>
+            <span class="badge badge--online" id="statusNetease">在线</span>
+          </div>
+          <div class="service-item">
+            <span class="service-name">Fish Audio TTS</span>
+            <span class="badge badge--online" id="statusFish">在线</span>
+          </div>
+          <div class="service-item">
+            <span class="service-name">飞书日历</span>
+            <span class="badge badge--offline" id="statusFeishu">未配置</span>
+          </div>
+          <div class="service-item">
+            <span class="service-name">OpenWeather</span>
+            <span class="badge badge--offline" id="statusWeather">未配置</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- UPnP 设备管理 -->
+      <section class="card">
+        <h2 class="card__title">音响投送</h2>
+        <div class="device-list" id="upnpDevices">
+          <p class="muted-text">搜索 UPnP 设备中…</p>
+        </div>
+        <button class="btn btn--ghost scan-btn" id="btnScanDevices">重新扫描</button>
+      </section>
+
+      <!-- PWA 缓存管理 -->
+      <section class="card">
+        <h2 class="card__title">缓存管理</h2>
+        <div class="cache-info" id="cacheInfo">
+          <p><span id="cacheCount">0</span> 首歌曲已缓存</p>
+          <p class="cache-size" id="cacheSize">共 0 MB</p>
+        </div>
+        <button class="btn btn--ghost" id="btnClearCache">清除缓存</button>
+      </section>
+    </main>
+
+    <!-- ============================================================
+         底部导航栏
+         ============================================================ -->
+    <nav class="navbar">
+      <button class="navbar__item active" data-view="viewPlayer" id="navPlayer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        <span>播放</span>
+      </button>
+      <button class="navbar__item" data-view="viewProfile" id="navProfile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>品味</span>
+      </button>
+      <button class="navbar__item" data-view="viewSettings" id="navSettings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>设置</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============================================================
+       PWA 注册 + 入口脚本
+       ============================================================ -->
+  <script type="module" src="/src/client/main.js"></script>
+</body>
+</html>

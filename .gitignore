@@ -1,0 +1,48 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# 环境变量（含密钥）
+.env
+.env.local
+.env.*.local
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# 临时文件
+~/
+*.tmp
+*.temp
+
+# 日志
+*.log
+npm-debug.log*
+
+# 缓存
+.cache/
+src/data/cache/
+
+# 包锁文件（根目录的由 claudio/ 子项目管理）
+package-lock.json
+
+# CodeBuddy
+.codebuddy/
+.workbuddy/
+
+# 笔记文档（非项目代码）
+开发通用参考指引.md
+开发修改记录与问题总结.md
+约束.md

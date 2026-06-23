@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Claudio — 个人 AI 电台" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon-64.png" />
+  <link rel="stylesheet" href="./styles/variables.css" />
+  <link rel="stylesheet" href="./styles/app.css" />
+  <title>Claudio AI Radio</title>
+</head>
+<body>
+  <main id="app">
+    <!-- ============ 播放器视图 ============ -->
+    <section id="view-player" class="view active" aria-label="播放器">
+
+      <!-- AI 状态指示器 -->
+      <div class="ai-indicator">
+        <span class="ai-indicator__dot idle" id="aiDot"></span>
+        <span id="aiStatus">在线</span>
+      </div>
+
+      <!-- 封面：黑胶唱片效果 -->
+      <div class="player-cover">
+        <div class="cover-disc">
+          <img class="cover-art" src="" alt="" loading="lazy" />
+          <svg class="cover-svg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="16" y="24" width="88" height="72" rx="8" fill="var(--bg-tertiary)" stroke="var(--border-default)" stroke-width="1.5"/>
+            <circle cx="44" cy="48" r="11" fill="var(--color-accent)" opacity="0.18"/>
+            <circle cx="44" cy="48" r="5" fill="var(--color-accent)" opacity="0.4"/>
+            <polygon points="43,44 43,52 51,48" fill="var(--color-accent)" opacity="0.6"/>
+            <rect x="68" y="40" width="28" height="6" rx="3" fill="var(--border-default)" opacity="0.6"/>
+            <rect x="68" y="50" width="22" height="6" rx="3" fill="var(--border-default)" opacity="0.4"/>
+            <rect x="68" y="60" width="18" height="6" rx="3" fill="var(--border-default)" opacity="0.3"/>
+            <circle cx="60" cy="60" r="2" fill="var(--color-accent)" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 歌曲信息 -->
+      <div class="player-info">
+        <h1 class="song-title">等待播放...</h1>
+        <p class="song-artist">Claudio AI Radio</p>
+      </div>
+
+      <!-- 进度条 -->
+      <div class="player-progress">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="time-current">0:00</span>
+        <span class="time-duration">0:00</span>
+      </div>
+
+      <!-- 控制按钮 -->
+      <div class="player-controls">
+        <button id="btn-prev" aria-label="上一首">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button id="btn-play" aria-label="播放">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button id="btn-next" aria-label="下一首">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+      </div>
+
+      <!-- AI 信息流 -->
+      <div class="player-stream" id="player-stream">
+        <div class="stream-empty">跟 Claudio 说句话吧<br/>比如 "早安" "放首爵士" "今天下午有什么事"</div>
+      </div>
+
+      <!-- 快捷输入 -->
+      <div class="player-input">
+        <input type="text" id="chatInput" placeholder="跟 Claudio 说点什么..." autocomplete="off" />
+        <button id="btnSend" aria-label="发送">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ 个人档案视图 ============ -->
+    <section id="view-profile" class="view" aria-label="个人档案">
+      <h2>我的音乐品味</h2>
+      <canvas id="taste-radar" width="280" height="280"></canvas>
+      <div id="taste-tags"></div>
+      <div id="play-history"></div>
+      <textarea id="taste-editor" placeholder="告诉 Claudio 你的偏好…" rows="3"></textarea>
+      <button id="btn-save-taste">保存偏好</button>
+    </section>
+
+    <!-- ============ 设置视图 ============ -->
+    <section id="view-settings" class="view" aria-label="设置">
+      <h2>设置</h2>
+
+      <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;color:var(--color-text-secondary)">
+        说话频率
+        <select id="setting-frequency">
+          <option value="less">少说话</option>
+          <option value="normal" selected>正常</option>
+          <option value="more">活跃</option>
+        </select>
+      </label>
+
+      <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;color:var(--color-text-secondary)">
+        DJ 风格
+        <select id="setting-style">
+          <option value="warm" selected>温暖</option>
+          <option value="casual">轻松</option>
+          <option value="pro">专业</option>
+        </select>
+      </label>
+
+      <h3>服务状态</h3>
+      <div id="service-status">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>DeepSeek AI</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-deepseek" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div><span>网易云</span> <span id="status-netease" class="badge badge--online">在线</span></div>
+        <div><span>Fish Audio</span> <span id="status-fish" class="badge badge--online">在线</span></div>
+        <div><span>飞书</span> <span id="status-feishu" class="badge badge--offline">未配置</span></div>
+        <div><span>天气</span> <span id="status-weather" class="badge badge--offline">未配置</span></div>
+      </div>
+
+      <h3>UPnP 设备</h3>
+      <div id="upnp-devices"></div>
+      <button id="btn-scan-devices">扫描设备</button>
+
+      <h3>缓存</h3>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:8px">
+        <span id="cache-count">0</span> 首 · <span id="cache-size">0 MB</span>
+      </p>
+      <button id="btn-clear-cache">清除缓存</button>
+    </section>
+
+    <!-- 底部导航 -->
+    <nav id="tab-bar" aria-label="主导航">
+      <button class="tab active" data-view="player" aria-label="播放器">
+        <span class="tab-icon">🎵</span>
+        <span class="tab-label">Player</span>
+      </button>
+      <button class="tab" data-view="profile" aria-label="档案">
+        <span class="tab-icon">👤</span>
+        <span class="tab-label">Profile</span>
+      </button>
+      <button class="tab" data-view="settings" aria-label="设置">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Settings</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
